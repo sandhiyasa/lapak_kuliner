@@ -1,0 +1,28 @@
+<!-- tambah_data.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Form Penambahan Menu Baru API</title>
+</head>
+<body>
+    <h3>Form Penambahan Menu Baru API</h3>
+    <form action="api_tambah_menu.php" method="POST">
+        <label>Nama Menu:</label><br>
+        <input type="text" name="nama_produk" required><br><br>
+        
+        <label>Harga (Rp):</label><br>
+        <input type="number" name="harga" required><br><br>
+        
+        <label>Kategori:</label><br>
+        <select name="kategori">
+            <option value="Makanan">Makanan</option>
+            <option value="Minuman">Minuman</option>
+            <option value="Cemilan">Cemilan</option>
+        </select><br><br>
+        
+        <button type="submit">Kirim ke Web API</button>
+    </form>
+</body>
+</html>
+

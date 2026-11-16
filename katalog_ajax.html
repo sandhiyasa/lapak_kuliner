@@ -1,0 +1,128 @@
+<!-- katalog_ajax.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Katalog Live - Lapak Kuliner</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        #loader { display: none; color: #e15f41; font-style: italic; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <h2>Katalog Menu (Live AJAX)</h2>
+
+    <!-- Form Interaktif AJAX -->
+    <form id="form-tambah" style="margin-bottom: 20px; padding: 15px; background: #f5f6fa; border: 1px solid #ccc;">
+        <h3>Tambah Menu Baru</h3>
+        <input type="text" id="input-nama" placeholder="Nama Menu" required style="padding: 5px;">
+        <input type="number" id="input-harga" placeholder="Harga (Rp)" required style="padding: 5px;">
+        <select id="input-kategori" required style="padding: 5px;">
+            <option value="Makanan">Makanan</option>
+            <option value="Minuman">Minuman</option>
+        </select>
+        <button type="submit" style="padding: 6px; background: #2c3e50; color: white; border: none; cursor: pointer;">
+            Simpan Menu
+        </button>
+        <span id="pesan-form" style="margin-left: 10px; font-weight: bold;"></span>
+    </form>
+
+    <button id="btn-muat" style="padding: 10px; background: #20bf6b; color: white; border: none; cursor: pointer;">
+        Muat Data Terkini
+    </button>
+
+    <div id="loader">Menghubungkan ke server...</div>
+    <div id="wadah-katalog" style="margin-top: 20px;">
+        <!-- Data JSON dari PHP akan dirender ke sini oleh DOM -->
+    </div>
+
+    <script>
+        const btnMuat = document.getElementById('btn-muat');
+        const loader = document.getElementById('loader');
+        const wadahKatalog = document.getElementById('wadah-katalog');
+
+        btnMuat.addEventListener('click', function() {
+            // UX Check: Tampilkan loader saat request berjalan
+            loader.style.display = 'block';
+            wadahKatalog.innerHTML = ''; 
+            btnMuat.disabled = true;
+
+            // Memulai AJAX Request menggunakan Fetch API
+            fetch('api_menu.php')
+                .then(response => {
+                    if (!response.ok) throw new Error('Respon server bermasalah');
+                    return response.json(); // Mengurai JSON ke Object JS
+                })
+                .then(resData => {
+                    if (resData.status === 200) {
+                        // DOM Manipulation: Merender array data menjadi elemen HTML
+                        resData.data.forEach(item => {
+                            let menuCard = document.createElement('div');
+                            menuCard.className = 'card';
+                            menuCard.innerHTML = `
+                                <h3 style="margin:0 0 5px 0;">${item.menu}</h3>
+                                <p style="margin:0; color:gray;">Kategori: ${item.jenis}</p>
+                                <p style="margin:5px 0 0 0; font-weight:bold;">Rp ${item.harga}</p>
+                            `;
+                            wadahKatalog.appendChild(menuCard);
+                        });
+                    } else {
+                        wadahKatalog.innerHTML = `<p style="color:red;">${resData.pesan}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Terjadi kesalahan:', error);
+                    wadahKatalog.innerHTML = '<p style="color:red;">Koneksi ke API terputus.</p>';
+                })
+                .finally(() => {
+                    // UX Check: Kembalikan state antarmuka
+                    loader.style.display = 'none';
+                    btnMuat.disabled = false;
+                });
+        });
+
+        const formTambah = document.getElementById('form-tambah');
+        const pesanForm = document.getElementById('pesan-form');
+
+        formTambah.addEventListener('submit', function(event) {
+            // PENTING: Mencegah browser melakukan reload halaman bawaan form
+            event.preventDefault();
+
+            pesanForm.style.color = 'blue';
+            pesanForm.innerText = 'Menyimpan data...';
+
+            // Menyiapkan data yang akan dikirim (Format FormData untuk ditangkap oleh $_POST PHP)
+            let formData = new FormData();
+            formData.append('nama_produk', document.getElementById('input-nama').value);
+            formData.append('harga', document.getElementById('input-harga').value);
+            formData.append('kategori', document.getElementById('input-kategori').value);
+
+            // Konfigurasi Fetch API untuk metode POST
+            fetch('api_tambah_menu.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(resData => {
+                if(resData.status === 201) {
+                    pesanForm.style.color = 'green';
+                    pesanForm.innerText = resData.pesan;
+                    formTambah.reset(); // Mengosongkan form setelah sukses
+
+                    // Opsional: Otomatis men-trigger klik tombol muat data agar tabel langsung update
+                    btnMuat.click(); 
+                } else {
+                    pesanForm.style.color = 'red';
+                    pesanForm.innerText = resData.pesan;
+                }
+            })
+            .catch(error => {
+                pesanForm.style.color = 'red';
+                pesanForm.innerText = 'Gagal terhubung ke server.';
+            });
+        });
+    </script>
+</body>
+</html>
+
